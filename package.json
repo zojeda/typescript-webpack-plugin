@@ -1,0 +1,25 @@
+{
+  "name": "typescript-webpack-plugin",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/ts-plugin.js",
+  "scripts": {
+    "build": "tsc --version && tsc",
+    "build-watch": "tsc --version && tsc --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/typescript": "^2.0.0",
+    "glob": "^7.1.1"
+  },
+  "devDependencies": {
+    "@types/glob": "^5.0.30",
+    "@types/node": "^7.0.5",
+    "@types/typescript": "^2.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^2.2.1"
+  }
+}
