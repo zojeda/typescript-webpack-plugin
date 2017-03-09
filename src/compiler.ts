@@ -1,13 +1,15 @@
 import * as ts from "typescript";
 import * as path from "path";
+import 'colors';
 
 import makeResolver = require('./resolver');
-import interfaces = require('./interfaces');
-import * as utils from './utils';
+import { CompilationResult, DependencyGraph, WebpackError, ResolveSync } from './interfaces';
+import { appendTsSuffixIfMatch } from './utils';
 
 
-export function compile(fileNames: string[], options: ts.CompilerOptions, oldProgram: ts.Program): {program: ts.Program, dependencyGraph: interfaces.DependencyGraph} {
-    const dependencyGraph : interfaces.DependencyGraph = {}
+export function compile(fileNames: string[], options: ts.CompilerOptions, oldProgram: ts.Program): CompilationResult {
+    const dependencyGraph : DependencyGraph = {};
+    const errors: WebpackError[] = [];
     const reverseDependencyGraph = {};
     const host = createCompilerHost();
 
@@ -22,13 +24,26 @@ export function compile(fileNames: string[], options: ts.CompilerOptions, oldPro
     let allDiagnostics = ts.getPreEmitDiagnostics(program).concat(emitResult.diagnostics);
 
     allDiagnostics.forEach(diagnostic => {
-        let { line, character } =  diagnostic.file ? diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start): {line: null, character: null};
-        let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+        let errorLocation : {line: number, character: number} =  {line: null, character: null};
+        let rawMessage = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+        let errorMessage = rawMessage;
+        if (diagnostic.file) {
+            errorLocation = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+            errorMessage =  `${'('.white}${(errorLocation.line + 1).toString().cyan},${(errorLocation.character + 1).toString().cyan}): ${rawMessage.red}`
+            errorMessage = path.normalize(diagnostic.file.fileName).red + errorMessage;
+
+        }
         let fileName = diagnostic.file ? diagnostic.file.fileName : '--------';
-        console.error(`${fileName} (${line},${character}): ${message}`);
+        errors.push({
+            file: fileName,
+            location: errorLocation,
+            rawMessage: rawMessage,
+            message: errorMessage,
+            loaderSource: 'ts-loader'
+        })
     });
 
-    return {program: program, dependencyGraph: dependencyGraph};
+    return {program, dependencyGraph, errors};
 
 
 
@@ -50,7 +65,7 @@ export function compile(fileNames: string[], options: ts.CompilerOptions, oldPro
         }
 
         function resolveModuleName(
-            resolveSync: interfaces.ResolveSync,
+            resolveSync: ResolveSync,
             appendTsSuffixTo: RegExp[],
             scriptRegex: RegExp,
 
@@ -62,7 +77,7 @@ export function compile(fileNames: string[], options: ts.CompilerOptions, oldPro
 
             try {
                 let resolvedFileName = resolveSync(undefined, path.normalize(path.dirname(containingFile)), moduleName);
-                resolvedFileName = utils.appendTsSuffixIfMatch(appendTsSuffixTo, resolvedFileName);
+                resolvedFileName = appendTsSuffixIfMatch(appendTsSuffixTo, resolvedFileName);
 
                 if (resolvedFileName.match(scriptRegex)) {
                     resolutionResult = { resolvedFileName };

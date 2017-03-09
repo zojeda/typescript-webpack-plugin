@@ -1,4 +1,4 @@
-import typescript = require('typescript');
+import * as ts from 'typescript';
 
 export interface SourceMap {
     sources: any[];
@@ -116,6 +116,7 @@ export interface WebpackCompilation {
             source: () => string;
         }
     };
+    plugin(call: 'normal-module-loader', callback: (loaderContext: any) => any): void;
 }
 
 /**
@@ -198,8 +199,8 @@ export interface ModuleResolutionHost {
 }
 
 export interface TSInstance {
-    compiler: typeof typescript;
-    compilerOptions: typescript.CompilerOptions;
+    compiler: typeof ts;
+    compilerOptions: ts.CompilerOptions;
     loaderOptions: LoaderOptions;
     /**
      * a cache of all the files
@@ -209,7 +210,7 @@ export interface TSInstance {
      * contains the modified files - cleared each time after-compile is called
      */
     modifiedFiles?: TSFiles;
-    languageService?: typescript.LanguageService;
+    languageService?: ts.LanguageService;
     version?: number;
     dependencyGraph: DependencyGraph;
     reverseDependencyGraph: ReverseDependencyGraph;
@@ -236,15 +237,18 @@ export interface CachedResults {
     checkSums: SourcesCheckSum;
     dependencyGraph: DependencyGraph
 }
+
+export interface CompilationResult {
+    program: ts.Program;
+    dependencyGraph: DependencyGraph;
+    errors:  WebpackError[]
+}
+
 export interface ReverseDependencyGraph {
     [file: string]: {
         [file: string]: boolean
     };
 }
-
-export type Partial<T> = {
-    [P in keyof T]?: T[P];
-};
 
 export interface LoaderOptions {
     silent: boolean;
@@ -256,7 +260,7 @@ export interface LoaderOptions {
     transpileOnly: boolean;
     ignoreDiagnostics: number[];
     visualStudioErrorFormat: boolean;
-    compilerOptions: typescript.CompilerOptions;
+    compilerOptions: ts.CompilerOptions;
     appendTsSuffixTo: RegExp[];
     entryFileIsJs: boolean;
 }
@@ -280,15 +284,15 @@ export interface TSCompatibleCompiler {
     // typescript@next 1.7+
     readConfigFile(fileName: string, readFile: (path: string) => string): {
         config?: any;
-        error?: typescript.Diagnostic;
+        error?: ts.Diagnostic;
     };
     // typescript@latest 1.6.2
     readConfigFile(fileName: string): {
         config?: any;
-        error?: typescript.Diagnostic;
+        error?: ts.Diagnostic;
     };
     // typescript@next 1.8+
-    parseJsonConfigFileContent?(json: any, host: typescript.ParseConfigHost, basePath: string): typescript.ParsedCommandLine;
+    parseJsonConfigFileContent?(json: any, host: ts.ParseConfigHost, basePath: string): ts.ParsedCommandLine;
     // typescript@latest 1.6.2
-    parseConfigFile?(json: any, host: typescript.ParseConfigHost, basePath: string): typescript.ParsedCommandLine;
+    parseConfigFile?(json: any, host: ts.ParseConfigHost, basePath: string): ts.ParsedCommandLine;
 }

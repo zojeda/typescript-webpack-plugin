@@ -3,25 +3,44 @@
   "version": "0.0.1",
   "description": "",
   "main": "dist/plugin.js",
+
   "scripts": {
     "build": "tsc --version && tsc",
     "build-watch": "tsc --version && tsc --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "npm run build"
   },
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zojeda/typescript-webpack-plugin.git"
+  },
+  "keywords": [
+    "typescript-plugin",
+    "webpack",
+    "loader",
+    "typescript",
+    "ts"
+  ],
+  "engines": {
+    "node": ">=4.3.0 <5.0.0 || >=5.10"
+  },
+  "author": "Zacarías F. Ojeda <zojeda@gmail.com>",
   "dependencies": {
     "@types/typescript": "^2.0.0",
+    "colors": "^1.1.2",
     "enhanced-resolve": "^3.1.0",
     "glob": "^7.1.1",
-    "loader-utils": "^1.0.3"
+    "loader-utils": "^1.0.3",
+    "winston": "^2.3.1"
   },
   "devDependencies": {
+    "@types/colors": "^1.1.1",
     "@types/glob": "^5.0.30",
     "@types/node": "^7.0.5",
-    "@types/typescript": "^2.0.0"
+    "@types/typescript": "^1.8.10",
+    "@types/winston": "^2.2.0"
   },
   "peerDependencies": {
-    "typescript": "^2.2.1"
+    "typescript": "^1.8.10"
   }
 }

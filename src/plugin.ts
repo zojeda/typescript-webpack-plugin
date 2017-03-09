@@ -2,8 +2,8 @@ import * as ts from 'typescript';
 import * as glob from 'glob';
 import * as path from 'path';
 import * as fs from 'fs';
-
-import { Compiler, DependencyGraph, SourcesCheckSum, CachedResults } from './interfaces';
+import { logger } from './logger';
+import { Compiler, DependencyGraph, SourcesCheckSum, CachedResults, WebpackCompilation, CompilationResult } from './interfaces';
 import { compile } from './compiler';
 import { ITSPluginOptions } from './plugin.options'
 import { calculateSourcesCheckSums, getChangedSourcesAndDepenencies } from './utils';
@@ -23,31 +23,36 @@ class TSPlugin {
     // will be passed to loader in order to add dependencies
     let tsDependencyGraph: DependencyGraph;
 
+    let compilationResult: CompilationResult;
+
 
     let allSources = this.options.tsconfig.filesGlob
       .map(entry => glob.sync(entry))
       .reduce((a1: string[], a2: string[]) => a1.concat(a2))
 
     compiler.plugin("compile", () => {
-
+      logger.info(`starting typescript@${ts.version} commpilation`)
+      logger.profile('compilation');
       let allSourceHashes = calculateSourcesCheckSums(allSources);
       let cachedResults = this.readCachedResults();
 
       let sourcesToCompile = getChangedSourcesAndDepenencies(allSources, allSourceHashes, cachedResults);
 
-      console.log("starting to compile [%s] files, [%s] cached, reusing program: ", sourcesToCompile.length, allSources.length - sourcesToCompile.length, !!oldProgram);
-      let startTime = Date.now();
-      let { program, dependencyGraph } = compile(sourcesToCompile, this.compilerOptions, oldProgram);
-      oldProgram = program;
-      cachedResults = this.updateCachedResults(sourcesToCompile, dependencyGraph, allSourceHashes, cachedResults);
+      logger.info("starting to compile [%s] files, [%s] cached, reusing program: ", sourcesToCompile.length, allSources.length - sourcesToCompile.length, !!oldProgram);
+      compilationResult = compile(sourcesToCompile, this.compilerOptions, oldProgram);
+      oldProgram = compilationResult.program;
+      cachedResults = this.updateCachedResults(sourcesToCompile, compilationResult.dependencyGraph, allSourceHashes, cachedResults);
 
       tsDependencyGraph = cachedResults.dependencyGraph;
-      console.log("compilation finished: [%s] s.", (Date.now() - startTime) / 1000);
+      logger.profile('compilation');
 
 
     });
 
-    compiler.plugin("compilation", (compilation: any) => {
+    compiler.plugin("compilation", (compilation: WebpackCompilation) => {
+      if(compilationResult && compilationResult.errors) {
+        compilation.errors.push(...compilationResult.errors);
+      }
       compilation.plugin('normal-module-loader', (loaderContext: any) => {
         loaderContext.tsPluginOptions = this.options;
         loaderContext.tsOutputDir = this.tsOutputDir;
@@ -70,7 +75,7 @@ class TSPlugin {
       cachedResults = JSON.parse(fs.readFileSync(this.cachePath, 'utf-8'));
       cachedResults.dependencyGraph = cachedResults.dependencyGraph || {};
     } catch (error) {
-      console.log('cache is empty');
+      logger.debug('cache is empty');
     }
     return cachedResults;
   }
