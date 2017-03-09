@@ -2,7 +2,7 @@
   "name": "typescript-webpack-plugin",
   "version": "0.0.1",
   "description": "",
-  "main": "dist/ts-plugin.js",
+  "main": "dist/plugin.js",
   "scripts": {
     "build": "tsc --version && tsc",
     "build-watch": "tsc --version && tsc --watch",
@@ -12,7 +12,9 @@
   "license": "ISC",
   "dependencies": {
     "@types/typescript": "^2.0.0",
-    "glob": "^7.1.1"
+    "enhanced-resolve": "^3.1.0",
+    "glob": "^7.1.1",
+    "loader-utils": "^1.0.3"
   },
   "devDependencies": {
     "@types/glob": "^5.0.30",

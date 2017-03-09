@@ -228,6 +228,14 @@ export interface DependencyGraph {
     [file: string]: string[];
 }
 
+export interface SourcesCheckSum {
+    [sourcePath: string]: number
+}
+
+export interface CachedResults {
+    checkSums: SourcesCheckSum;
+    dependencyGraph: DependencyGraph
+}
 export interface ReverseDependencyGraph {
     [file: string]: {
         [file: string]: boolean
