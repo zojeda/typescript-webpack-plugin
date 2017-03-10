@@ -20,7 +20,6 @@ export function compile(fileNames: string[], options: ts.CompilerOptions, oldPro
 
     let program = ts.createProgram(fileNames, options, host, oldProgram);
     let emitResult = program.emit();    
-
     let allDiagnostics = ts.getPreEmitDiagnostics(program).concat(emitResult.diagnostics);
 
     allDiagnostics.forEach(diagnostic => {

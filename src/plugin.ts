@@ -26,12 +26,10 @@ class TSPlugin {
     let compilationResult: CompilationResult;
 
 
-    let allSources = this.options.tsconfig.filesGlob
-      .map(entry => glob.sync(entry))
-      .reduce((a1: string[], a2: string[]) => a1.concat(a2))
+    let allSources = this.getAllSources();
 
     compiler.plugin("compile", () => {
-      logger.info(`starting typescript@${ts.version} commpilation`)
+      logger.info(`starting typescript@${ts.version} commpilation`);
       logger.profile('compilation');
       let allSourceHashes = calculateSourcesCheckSums(allSources);
       let cachedResults = this.readCachedResults();
@@ -50,8 +48,9 @@ class TSPlugin {
     });
 
     compiler.plugin("compilation", (compilation: WebpackCompilation) => {
-      if(compilationResult && compilationResult.errors) {
+      if(compilationResult && compilationResult.errors && compilationResult.errors.length > 0) {
         compilation.errors.push(...compilationResult.errors);
+        logger.error("compilation fail: ",compilationResult.errors.map(error => error.message));
       }
       compilation.plugin('normal-module-loader', (loaderContext: any) => {
         loaderContext.tsPluginOptions = this.options;
@@ -62,6 +61,22 @@ class TSPlugin {
     });
 
   };
+
+  private getAllSources() {
+    const allSources = this.getFilesGlob(this.options.tsconfig.filesGlob);
+    allSources.push(...this.getFilesGlob(this.options.include));
+    const excluded = this.getFilesGlob(this.options.exclude);
+    return allSources.filter(file => excluded.indexOf(file)===-1);
+  }
+
+  private getFilesGlob(filesGlob: string[]) {
+    if (!filesGlob) {
+      return [];
+    }
+    return filesGlob
+      .map(entry => glob.sync(entry))
+      .reduce((a1: string[], a2: string[]) => a1.concat(a2));
+  }
 
   private get compilerOptions(): ts.CompilerOptions {
     let { options, errors } = ts.convertCompilerOptionsFromJson(this.options.tsconfig.compilerOptions, '.');
@@ -85,6 +100,9 @@ class TSPlugin {
     Object.assign(cachedResults.dependencyGraph, dependencyGraph);
 
     try {
+      if (!fs.existsSync(path.dirname(this.cachePath))) {
+        fs.mkdirSync(path.dirname(this.cachePath))
+      }
       fs.writeFileSync(this.cachePath, JSON.stringify(cachedResults), 'utf-8');
     } catch (error) {
       throw error
