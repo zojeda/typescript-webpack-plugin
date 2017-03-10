@@ -14,7 +14,10 @@ class TSPlugin {
   cachePath: string;
   constructor(private options: ITSPluginOptions) {
     this.options.cacheDir = options.cacheDir || '.typescript-webpack-plugin';
+    //START overriding tsconfig
     this.options.tsconfig.compilerOptions.outDir = path.join(this.options.cacheDir, 'build');
+    this.options.tsconfig.compilerOptions.rootDir = process.cwd();
+    //END overriding tsconfig
     this.tsOutputDir = path.resolve(options.tsconfig.compilerOptions.outDir);
     this.cachePath = path.join(this.options.cacheDir, 'cache.json');
   }
