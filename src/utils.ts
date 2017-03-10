@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as glob from 'glob';
 import {DependencyGraph, SourcesCheckSum, CachedResults} from './interfaces';
 
 export function appendTsSuffixIfMatch(patterns: RegExp[], path: string): string {
@@ -74,3 +75,13 @@ export function calculateSourcesCheckSums(allSources: string[]): SourcesCheckSum
           return entry
         }).reduce((entry1, entry2) => Object.assign(entry1, entry2));
 }
+
+
+export function getFilesGlob(filesGlob: string[]) {
+    if (!filesGlob) {
+      return [];
+    }
+    return filesGlob
+      .map(entry => glob.sync(entry))
+      .reduce((a1: string[], a2: string[]) => a1.concat(a2), []);
+  }

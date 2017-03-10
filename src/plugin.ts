@@ -1,12 +1,12 @@
 import * as ts from 'typescript';
-import * as glob from 'glob';
+
 import * as path from 'path';
 import * as fs from 'fs';
 import { logger } from './logger';
 import { Compiler, DependencyGraph, SourcesCheckSum, CachedResults, WebpackCompilation, CompilationResult } from './interfaces';
 import { compile } from './compiler';
 import { ITSPluginOptions } from './plugin.options'
-import { calculateSourcesCheckSums, getChangedSourcesAndDepenencies } from './utils';
+import { calculateSourcesCheckSums, getChangedSourcesAndDepenencies, getFilesGlob } from './utils';
 
 
 class TSPlugin {
@@ -63,20 +63,12 @@ class TSPlugin {
   };
 
   private getAllSources() {
-    const allSources = this.getFilesGlob(this.options.tsconfig.filesGlob);
-    allSources.push(...this.getFilesGlob(this.options.include));
-    const excluded = this.getFilesGlob(this.options.exclude);
+    const allSources = getFilesGlob(this.options.tsconfig.filesGlob);
+    allSources.push(...getFilesGlob(this.options.include));
+    const excluded = getFilesGlob(this.options.exclude);
     return allSources.filter(file => excluded.indexOf(file)===-1);
   }
 
-  private getFilesGlob(filesGlob: string[]) {
-    if (!filesGlob) {
-      return [];
-    }
-    return filesGlob
-      .map(entry => glob.sync(entry))
-      .reduce((a1: string[], a2: string[]) => a1.concat(a2));
-  }
 
   private get compilerOptions(): ts.CompilerOptions {
     let { options, errors } = ts.convertCompilerOptionsFromJson(this.options.tsconfig.compilerOptions, '.');
